@@ -1,0 +1,4 @@
+sqlalchemy
+sqlmodel
+alembic
+prometheus-fastapi-instrumentator==6.1.0

@@ -1,0 +1,134 @@
+# docker-compose.yml
+services:
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik-container
+    command:
+      # Enable Traefik API (for dashboard)
+      - "--api.insecure=false" 
+      # Enable Docker provider and tell Traefik to listen to Docker events
+      - "--providers.docker=true"
+      # Do not expose all containers by default, only those with traefik.enable=true
+      - "--providers.docker.exposedbydefault=false"
+      # Entrypoints for HTTP (port 80) and HTTPS (port 443)
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      # Let's Encrypt resolver
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=ntando.mv15@gmail.com" 
+      - "--certificatesresolvers.myresolver.acme.storage=/etc/traefik/acme.json"
+      # Global HTTP to HTTPS redirection middleware
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8081:8080" # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .traefik/acme.json:/etc/traefik/acme.json 
+    networks:
+      - app-net
+    labels:
+      # Enable Traefik for the Traefik dashboard itself
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`demo-link.mooo.com`) && PathPrefix(`/dashboard`)" 
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls.certresolver=myresolver"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+
+  backend:
+    build:
+      context: ../backend
+    container_name: backend-container
+    environment:
+      # Update CORS origins to include domain
+      - BACKEND_CORS_ORIGINS=["http://localhost", "http://localhost:5173", "https://localhost", "https://localhost:5173", "https://demo-link.mooo.com", "https://www.demo-link.mooo.com"] # <--- IMPORTANT: Update with your domain
+      - SECRET_KEY=changethis123
+      - FIRST_SUPERUSER=chanllenge@devopsdojo.com
+      - FIRST_SUPERUSER_PASSWORD=devopsdojo57
+      - USERS_OPEN_REGISTRATION=True
+      - ENVIRONMENT=production # Changed to production for deployment
+      - PROJECT_NAME="Full Stack FastAPI Project"
+      - STACK_NAME=full-stack-fastapi-project
+      - POSTGRES_SERVER=db-container
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=app
+      - POSTGRES_USER=app
+      - POSTGRES_PASSWORD=changethis123
+      - ENABLE_METRICS=true
+      - ENV_FILE_PATH=/app/.env
+    command: /bin/bash -c "./prestart.sh && poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    volumes:
+      - ../backend:/app
+    labels:
+      - "traefik.enable=true" 
+      # Router for API endpoint
+      - "traefik.http.routers.backend-api.rule=Host(`demo-link.mooo.com`) && PathPrefix(`/api`)" 
+      - "traefik.http.routers.backend-api.entrypoints=websecure"
+      - "traefik.http.routers.backend-api.tls.certresolver=myresolver"
+      - "traefik.http.routers.backend-api.middlewares=www-to-non-www@docker" # Apply www redirect
+      - "traefik.http.services.backend-api.loadbalancer.server.port=8000"
+
+      # Router for Docs endpoint
+      - "traefik.http.routers.backend-docs.rule=Host(`demo-link.mooo.com`) && PathPrefix(`/docs`)" 
+      - "traefik.http.routers.backend-docs.entrypoints=websecure"
+      - "traefik.http.routers.backend-docs.tls.certresolver=myresolver"
+      - "traefik.http.routers.backend-docs.middlewares=www-to-non-www@docker" 
+      - "traefik.http.services.backend-docs.loadbalancer.server.port=8000"
+    depends_on:
+      - postgres
+    networks:
+      - app-net
+
+  postgres:
+    image: postgres
+    container_name: db-container
+    environment:
+      - POSTGRES_DB=app
+      - POSTGRES_USER=app
+      - POSTGRES_PASSWORD=changethis123
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - app-net
+
+  frontend:
+    image: app-compose-frontend
+    container_name: frontend-container
+    environment:
+      - VITE_API_URL=https://demo-link.mooo.com 
+    command: sh -c "chown -R node:node /app && npm run dev -- --host 0.0.0.0"
+    labels:
+      - "traefik.enable=true" 
+      - "traefik.http.routers.frontend.rule=Host(`demo-link.mooo.com`)" 
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+      - "traefik.http.routers.frontend.middlewares=www-to-non-www@docker" 
+      - "traefik.http.services.frontend.loadbalancer.server.port=5173"
+    networks:
+      - app-net
+
+  adminer_container:
+    image: adminer:latest
+    container_name: adminer-container
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.adminer.rule=Host(`db.demo-link.mooo.com`)" 
+      - "traefik.http.routers.adminer.entrypoints=websecure"
+      - "traefik.http.routers.adminer.tls.certresolver=myresolver"
+      - "traefik.http.routers.adminer.middlewares=www-to-non-www@docker" 
+      - "traefik.http.services.adminer.loadbalancer.server.port=8080"
+    networks:
+      - app-net
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:
+
+networks:
+  app-net:
+    name: app-net
+    driver: bridge
+
