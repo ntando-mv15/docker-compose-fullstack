@@ -1,14 +1,12 @@
 # docker-compose.yml
 services:
   traefik:
-    image: traefik:v2.10
+    image: traefik:latest # Changed image for better compaibilty
     container_name: traefik-container
     command:
-      # Enable Traefik API (for dashboard)
+      - "--api.dashboard=true" # Added command to enable Traefik dashboard        
       - "--api.insecure=false" 
-      # Enable Docker provider and tell Traefik to listen to Docker events
       - "--providers.docker=true"
-      # Do not expose all containers by default, only those with traefik.enable=true
       - "--providers.docker.exposedbydefault=false"
       # Entrypoints for HTTP (port 80) and HTTPS (port 443)
       - "--entrypoints.web.address=:80"
@@ -23,17 +21,16 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "8081:8080" # Traefik dashboard
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - .traefik/acme.json:/etc/traefik/acme.json 
+      - .traefik/acme.json:/etc/traefik/acme.json # Used named volume to auto-create acme.json file
     networks:
       - app-net
     labels:
       # Enable Traefik for the Traefik dashboard itself
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik.service=traefik"
-      - "traefik.http.routers.traefik.rule=Host(`123.wildsurf.net`) && PathPrefix(`/dashboard`)" 
+      - "traefik.http.routers.traefik.service=api@internal" 
+      - "traefik.http.routers.traefik.rule=Host(`traefik.123.wildsurf.net`)" # Changed domain
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.routers.traefik.tls.certresolver=myresolver"
       - "traefik.http.services.traefik.loadbalancer.server.port=8080"
@@ -69,7 +66,7 @@ services:
       - "traefik.http.routers.backend-api.service=backend-api"
       - "traefik.http.routers.backend-api.entrypoints=websecure"
       - "traefik.http.routers.backend-api.tls.certresolver=myresolver"
-      - "traefik.http.routers.backend-api.middlewares=www-to-non-www@docker" # Apply www redirect
+      - "traefik.http.routers.backend-api.middlewares=www-to-non-www@docker" 
       - "traefik.http.services.backend-api.loadbalancer.server.port=8000"
 
       # Router for Docs endpoint
@@ -104,7 +101,7 @@ services:
     command: sh -c "chown -R node:node /app && npm run dev -- --host 0.0.0.0"
     labels:
       - "traefik.enable=true" 
-      - "traefik.http.routers.frontend.rule=Host(`123.wildsurf.net`)" 
+      - "traefik.http.routers.frontend.rule=Host(`db.123.wildsurf.net`)" # Adjusted domain
       - "traefik.http.routers.frontend.service=frontend"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
@@ -118,7 +115,7 @@ services:
     container_name: adminer-container
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.adminer.rule=Host(`db.123.wildsurf.net`)" 
+      - "traefik.http.routers.adminer.rule=Host(`db.123.wildsurf.net`)" # Adjusted domain
       - "traefik.http.routers.adminer.service=adminer"
       - "traefik.http.routers.adminer.entrypoints=websecure"
       - "traefik.http.routers.adminer.tls.certresolver=myresolver"

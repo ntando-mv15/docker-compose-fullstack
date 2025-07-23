@@ -86,8 +86,7 @@ services:
       - app-net
     labels:  
       - "traefik.enable=true"
-      - "traefik.http.routers.cadvisor.service=cadvisor"
-      - "traefik.http.routers.cadvisor.rule=Host(`123.wildsurf.net`) && PathPrefix(`/cadvisor`)"
+      - "traefik.http.routers.cadvisor.rule=Host(`cadvisor.123.wildsurf.net`)" # Changed domain
       - "traefik.http.routers.cadvisor.entrypoints=websecure"
       - "traefik.http.routers.cadvisor.tls.certresolver=myresolver" 
       - "traefik.http.routers.cadvisor.middlewares=www-to-non-www@docker"
