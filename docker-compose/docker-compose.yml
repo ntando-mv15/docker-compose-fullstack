@@ -30,7 +30,7 @@ services:
       # Enable Traefik for the Traefik dashboard itself
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.service=api@internal" 
-      - "traefik.http.routers.traefik.rule=Host(`traefik.123.wildsurf.net`)" # Changed domain
+      - "traefik.http.routers.traefik.rule=Host(`traefik.wildsurf.net`)" # Changed domain
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.routers.traefik.tls.certresolver=myresolver"
       - "traefik.http.services.traefik.loadbalancer.server.port=8080"
@@ -41,7 +41,7 @@ services:
     container_name: backend-container
     environment:
       # Updated CORS origins to include domain
-      - BACKEND_CORS_ORIGINS=["http://localhost", "http://localhost:5173", "https://localhost", "https://localhost:5173", "https://123.wildsurf.net", "https://www.123.wildsurf.net"] 
+      - BACKEND_CORS_ORIGINS=["http://localhost", "http://localhost:5173", "https://localhost", "https://localhost:5173", "https://app.wildsurf.net", "https://www.app.wildsurf.net"] 
       - SECRET_KEY=changethis123
       - FIRST_SUPERUSER=chanllenge@devopsdojo.com
       - FIRST_SUPERUSER_PASSWORD=devopsdojo57
@@ -62,7 +62,7 @@ services:
     labels:
       - "traefik.enable=true" 
       # Router for API endpoint
-      - "traefik.http.routers.backend-api.rule=Host(`123.wildsurf.net`) && PathPrefix(`/api`)" 
+      - "traefik.http.routers.backend-api.rule=Host(`app.wildsurf.net`) && PathPrefix(`/api`)" 
       - "traefik.http.routers.backend-api.service=backend-api"
       - "traefik.http.routers.backend-api.entrypoints=websecure"
       - "traefik.http.routers.backend-api.tls.certresolver=myresolver"
@@ -70,7 +70,7 @@ services:
       - "traefik.http.services.backend-api.loadbalancer.server.port=8000"
 
       # Router for Docs endpoint
-      - "traefik.http.routers.backend-docs.rule=Host(`123.wildsurf.net`) && PathPrefix(`/docs`)"
+      - "traefik.http.routers.backend-docs.rule=Host(`app.wildsurf.net`) && PathPrefix(`/docs`)"
       - "traefik.http.routers.backend-docs.service=backend-docs" 
       - "traefik.http.routers.backend-docs.entrypoints=websecure"
       - "traefik.http.routers.backend-docs.tls.certresolver=myresolver"
@@ -97,11 +97,11 @@ services:
     image: app-compose-frontend
     container_name: frontend-container
     environment:
-      - VITE_API_URL=https://123.wildsurf.net
+      - VITE_API_URL=https://app.wildsurf.net
     command: sh -c "chown -R node:node /app && npm run dev -- --host 0.0.0.0"
     labels:
       - "traefik.enable=true" 
-      - "traefik.http.routers.frontend.rule=Host(`db.123.wildsurf.net`)" # Adjusted domain
+      - "traefik.http.routers.frontend.rule=Host(`app.wildsurf.net`)" # Adjusted domain
       - "traefik.http.routers.frontend.service=frontend"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
@@ -115,7 +115,7 @@ services:
     container_name: adminer-container
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.adminer.rule=Host(`db.123.wildsurf.net`)" # Adjusted domain
+      - "traefik.http.routers.adminer.rule=Host(`adminer.wildsurf.net`)" # Adjusted domain
       - "traefik.http.routers.adminer.service=adminer"
       - "traefik.http.routers.adminer.entrypoints=websecure"
       - "traefik.http.routers.adminer.tls.certresolver=myresolver"

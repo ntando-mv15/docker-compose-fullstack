@@ -14,7 +14,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.prometheus.service=prometheus"
-      - "traefik.http.routers.prometheus.rule=Host(`123.wildsurf.net`) && PathPrefix(`/prometheus`)" 
+      - "traefik.http.routers.prometheus.rule=Host(`app.wildsurf.net`) && PathPrefix(`/prometheus`)" 
       - "traefik.http.routers.prometheus.entrypoints=websecure" # HTTPS entrypoint
       - "traefik.http.routers.prometheus.tls.certresolver=myresolver" # Let's Encrypt resolver
       - "traefik.http.routers.prometheus.middlewares=www-to-non-www@docker" # Apply www redirect
@@ -30,7 +30,7 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_SERVER_ROOT_URL=https://123.wildsurf.net/grafana/
+      - GF_SERVER_ROOT_URL=https://app.wildsurf.net/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     networks:
       - app-net
@@ -42,7 +42,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.grafana.service=grafana"
-      - "traefik.http.routers.grafana.rule=Host(`123.wildsurf.net`) && PathPrefix(`/grafana`)"
+      - "traefik.http.routers.grafana.rule=Host(`app.wildsurf.net`) && PathPrefix(`/grafana`)"
       - "traefik.http.routers.grafana.entrypoints=websecure" 
       - "traefik.http.routers.grafana.tls.certresolver=myresolver" 
       - "traefik.http.routers.grafana.middlewares=www-to-non-www@docker" 
@@ -86,7 +86,7 @@ services:
       - app-net
     labels:  
       - "traefik.enable=true"
-      - "traefik.http.routers.cadvisor.rule=Host(`cadvisor.123.wildsurf.net`)" # Changed domain
+      - "traefik.http.routers.cadvisor.rule=Host(`cadvisor.wildsurf.net`)" # Changed domain
       - "traefik.http.routers.cadvisor.entrypoints=websecure"
       - "traefik.http.routers.cadvisor.tls.certresolver=myresolver" 
       - "traefik.http.routers.cadvisor.middlewares=www-to-non-www@docker"
